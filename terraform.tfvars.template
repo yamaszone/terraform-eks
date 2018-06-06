@@ -1,0 +1,24 @@
+region = "us-west-2"
+bastion_volume_size = "20"
+
+availability_zones = [
+  "us-west-2a",
+  "us-west-2b",
+  "us-west-2c",
+]
+
+internal_subnets = [
+  "10.30.0.0/19",
+  "10.30.64.0/19",
+  "10.30.128.0/19"
+]
+
+external_subnets = [
+  "10.30.32.0/20",
+  "10.30.96.0/20",
+  "10.30.160.0/20"
+]
+
+role_arn_eks_cluster_policy = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+
+role_arn_eks_service_policy = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
