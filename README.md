@@ -1,6 +1,36 @@
 # Terraform EKS Cluster
 Work-in-progress PoC for EKS.
 
+## Prerequisites
+- Download Heptio Authenticator
+  - `curl -o heptio-authenticator-aws https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws` # Linux
+  - `curl -o heptio-authenticator-aws https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws` # macOS
+- Install Heptio Authenticator
+  - `chmod +x heptio-authenticator-aws && sudo mv heptio-authenticator-aws /opt/bin/` # CoreOS
+  - `chmod +x heptio-authenticator-aws && sudo mv heptio-authenticator-aws /usr/local/bin/` # macOS/Linux
+- Install `kubectl`
+  - `curl -o https://storage.googleapis.com/kubernetes-release/release/v1.10.3/bin/linux/amd64/kubectl`
+  - `chmod +x kubectl && sudo mv kubectl /opt/bin/kubectl` # CoreOS
+  - `chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl` # macOS/Linux
+
+## Quickstart
+- Checkout this repo
+- `cp terraform.tfvars.template terraform.tfvars` # Update defaults if needed
+- `terraform init`
+- `terraform plan`
+- `terraform apply`
+- `terraform output kubeconfig-aws-1-10 > ~/.kube/eksconfig`
+- `terraform output role_arn_eks_basic_workers > aws-auth-cm.yaml`
+- `export KUBECONFIG=~/.kube/eksconfig`
+- `kubectl apply -f aws-auth-cm.yaml`
+- `kubectl get nodes` # Wait for Node STATUS to be ready
+- `kubectl apply -f nginx.yaml` # Deploy an example Nginx pod
+- `kubectl get pods` # Check if the Nginx pod is running
+- `kubectl get svc -o wide` # Locate the service URL for Nginx
+- Copy the Nginx URL from previous step and launch the Nginx welcome page via port 8000
+  - URL may look like `http://a2ec4e6b66a2411e883240aa8289a10c-778396272.us-west-2.elb.amazonaws.com:8000/`
+
 ## Credits
 - [Segmentio Stack](https://github.com/segmentio/stack) for VPC related modules
 - [WillJCJ](https://github.com/WillJCJ/eks-terraform-demo) for EKS related modules
+
