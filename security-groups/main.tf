@@ -1,114 +1,123 @@
-/*
-MIT License
-
-Copyright (c) 2016 Segment.io, Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-/**
- * Creates basic security groups to be used by instances and ELBs.
- */
-
-variable "name" {
-  description = "The name of the security groups serves as a prefix, e.g stack"
-}
-
 variable "vpc_id" {
-  description = "The VPC ID"
-}
-
-variable "environment" {
-  description = "The environment, used for tagging, e.g prod"
+  description = "ID of the VPC to deploy the cluster to."
+  type        = "string"
 }
 
 variable "cidr" {
-  description = "The cidr block to use for internal security groups"
+  description = "CIDR block for internal security groups."
 }
 
-resource "aws_security_group" "internal_elb" {
-  name        = "${format("%s-%s-internal-elb", var.name, var.environment)}"
-  vpc_id      = "${var.vpc_id}"
-  description = "Allows internal ELB traffic"
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["${var.cidr}"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags {
-    Name        = "${format("%s internal elb", var.name)}"
-    Environment = "${var.environment}"
-  }
+variable "cluster_name" {
+  description = "Name of the cluster. For tagging."
+  type        = "string"
 }
 
-resource "aws_security_group" "external_elb" {
-  name        = "${format("%s-%s-external-elb", var.name, var.environment)}"
-  vpc_id      = "${var.vpc_id}"
-  description = "Allows external ELB traffic"
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags {
-    Name        = "${format("%s external elb", var.name)}"
-    Environment = "${var.environment}"
-  }
+variable "environment" {
+  description = "Name of the environment, e.g. dev, prod, etc."
+  type        = "string"
 }
 
+resource "aws_security_group" "masters" {
+  name        = "${var.cluster_name}-masters"
+  description = "Security group for the EKS cluster."
+
+  vpc_id = "${var.vpc_id}"
+}
+
+resource "aws_security_group" "workers" {
+  name        = "${var.cluster_name}-workers"
+  description = "Security group for the EKS workers."
+
+  vpc_id = "${var.vpc_id}"
+}
+
+### SG Rules HTTPS worker to master
+resource "aws_security_group_rule" "in_worker_to_master_https" {
+  description = "HTTPS communation from the worker nodes."
+
+  type = "ingress"
+
+  from_port = 443
+  to_port   = 443
+
+  protocol = "tcp"
+
+  security_group_id        = "${aws_security_group.masters.id}"
+  source_security_group_id = "${aws_security_group.workers.id}"
+}
+
+resource "aws_security_group_rule" "out_worker_to_all" {
+  description = "Worker nodes can talk to anything."
+
+  type = "egress"
+
+  from_port = 0
+  to_port   = 0
+
+  protocol = "-1"
+
+  cidr_blocks = ["0.0.0.0/0"]
+
+  security_group_id = "${aws_security_group.workers.id}"
+}
+
+### SG Rules All TCP master to worker
+resource "aws_security_group_rule" "in_master_to_worker_all_tcp" {
+  description = "TCP communication from master nodes."
+
+  type      = "ingress"
+  from_port = 1025
+  to_port   = 65535
+
+  protocol = "tcp"
+
+  security_group_id        = "${aws_security_group.workers.id}"
+  source_security_group_id = "${aws_security_group.masters.id}"
+}
+
+resource "aws_security_group_rule" "out_master_to_worker_all_tcp" {
+  description = "TCP communication to worker nodes."
+
+  type      = "egress"
+  from_port = 1025
+  to_port   = 65535
+
+  protocol = "tcp"
+
+  security_group_id        = "${aws_security_group.masters.id}"
+  source_security_group_id = "${aws_security_group.workers.id}"
+}
+
+### SG Rules All worker to worker
+resource "aws_security_group_rule" "in_worker_to_worker_all" {
+  description = "All communication in from other worker nodes."
+
+  type      = "ingress"
+  from_port = 0
+  to_port   = 0
+
+  protocol = "-1"
+
+  security_group_id        = "${aws_security_group.workers.id}"
+  source_security_group_id = "${aws_security_group.workers.id}"
+}
+
+#### ssh all to worker
+#resource "aws_security_group_rule" "in_all_to_worker_ssh" {
+#  description = "ssh in from anywhere."
+#
+#  type      = "ingress"
+#  from_port = 22
+#  to_port   = 22
+#
+#  protocol = "tcp"
+#
+#  cidr_blocks = ["0.0.0.0/0"]
+#
+#  security_group_id = "${aws_security_group.workers.id}"
+#}
 resource "aws_security_group" "external_ssh" {
-  name        = "${format("%s-%s-external-ssh", var.name, var.environment)}"
+  name        = "${format("%s-%s-external-ssh", var.cluster_name, var.environment)}"
   description = "Allows ssh from the world"
   vpc_id      = "${var.vpc_id}"
 
@@ -131,13 +140,13 @@ resource "aws_security_group" "external_ssh" {
   }
 
   tags {
-    Name        = "${format("%s external ssh", var.name)}"
+    Name        = "${format("%s external ssh", var.cluster_name)}"
     Environment = "${var.environment}"
   }
 }
 
 resource "aws_security_group" "internal_ssh" {
-  name        = "${format("%s-%s-internal-ssh", var.name, var.environment)}"
+  name        = "${format("%s-%s-internal-ssh", var.cluster_name, var.environment)}"
   description = "Allows ssh from bastion"
   vpc_id      = "${var.vpc_id}"
 
@@ -160,7 +169,7 @@ resource "aws_security_group" "internal_ssh" {
   }
 
   tags {
-    Name        = "${format("%s internal ssh", var.name)}"
+    Name        = "${format("%s internal ssh", var.cluster_name)}"
     Environment = "${var.environment}"
   }
 }
@@ -175,12 +184,13 @@ output "internal_ssh" {
   value = "${aws_security_group.internal_ssh.id}"
 }
 
-// Internal ELB allows internal traffic.
-output "internal_elb" {
-  value = "${aws_security_group.internal_elb.id}"
+output "sg_id_masters" {
+  description = "ID of the security group for the EKS cluster."
+  value       = "${aws_security_group.masters.id}"
 }
 
-// External ELB allows traffic from the world.
-output "external_elb" {
-  value = "${aws_security_group.external_elb.id}"
+output "sg_id_workers" {
+  description = "ID of the security group for the works ASG."
+  value       = "${aws_security_group.workers.id}"
 }
+

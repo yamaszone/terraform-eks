@@ -2,6 +2,10 @@ variable "name" {
   description = "Name of this stack"
 }
 
+variable "cluster_name" {
+  description = "Name of this stack"
+}
+
 variable "environment" {
   description = "Name of your environment, e.g. dev, stg, prod, etc."
 }
@@ -43,13 +47,28 @@ variable "bastion_volume_size" {
   description = "Volume size in GB"
 }
 
-variable "role_arn_eks_cluster_policy" {
-  description = "ARN of the default policy, AmazonEKSClusterPolicy."
+variable "policy_arn_eks_cluster" {
+  description = "ARN of the default policy: AmazonEKSClusterPolicy."
   type        = "string"
 }
 
-variable "role_arn_eks_service_policy" {
-  description = "ARN of the default policy, AmazonEKSServicePolicy."
+variable "policy_arn_eks_service" {
+  description = "ARN of the default policy: AmazonEKSServicePolicy."
+  type        = "string"
+}
+
+variable "policy_arn_eks_worker" {
+  description = "ARN of the default policy: AmazonEKSWorkerNodePolicy"
+  type        = "string"
+}
+
+variable "policy_arn_eks_cni" {
+  description = "ARN of the default policy: AmazonEKS_CNI_Policy"
+  type        = "string"
+}
+
+variable "policy_arn_ecr_read" {
+  description = "ARN of the default policy: AmazonEC2ContainerRegistryReadOnly"
   type        = "string"
 }
 
@@ -70,7 +89,7 @@ module "vpc" {
 
 module "security_groups" {
   source      = "./security-groups"
-  name        = "${var.name}"
+  cluster_name= "${var.cluster_name}"
   vpc_id      = "${module.vpc.id}"
   environment = "${var.environment}"
   cidr        = "${var.cidr}"
@@ -91,20 +110,30 @@ module "bastion" {
 module "iam" {
   source = "./iam"
 
-  role_arn_eks_cluster_policy = "${var.role_arn_eks_cluster_policy}"
-  role_arn_eks_service_policy = "${var.role_arn_eks_service_policy}"
+  policy_arn_eks_cni     = "${var.policy_arn_eks_cni}"
+  policy_arn_eks_service = "${var.policy_arn_eks_service}"
+  policy_arn_ecr_read    = "${var.policy_arn_ecr_read}"
+  policy_arn_eks_cluster = "${var.policy_arn_eks_cluster}"
+  policy_arn_eks_worker  = "${var.policy_arn_eks_worker}"
 }
 
 module "eks" {
-  source = "./eks"
+  source                 = "./eks"
 
-  cluster_name = "eks-cluster"
+  cluster_name           = "${var.cluster_name}"
+  role_arn               = "${module.iam.role_arn_eks_basic_masters}"
+  cluster_subnets        = "${module.vpc.external_subnets}"
+  sg_id_cluster          = "${module.security_groups.sg_id_masters}"
+}
 
-  role_arn = "${module.iam.role_arn_eks_basic}"
+module "worker" {
+  source = "./worker"
 
-  vpc_id          = "${module.vpc.id}"
-  cluster_subnets = "${module.vpc.external_subnets}"
-  //cluster_subnets = "${module.vpc.internal_subnets},${module.vpc.external_subnets}"
+  # Use module output to wait for masters to create.
+  cluster_name                  = "${module.eks.cluster_id}"
+  instance_profile_name_workers = "${module.iam.instance_profile_name_workers}"
+  worker_subnets                = "${module.vpc.external_subnets}"
+  sg_id_workers                 = "${module.security_groups.sg_id_workers}"
 }
 
 // The region in which the infra lives.
@@ -200,7 +229,31 @@ users:
 KUBECONFIG
 }
 
+locals {
+  worker_iam_role_arn  = <<ROLEARN
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: ${module.iam.role_arn_eks_basic_workers}
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+
+ROLEARN
+}
+
 output "kubeconfig-aws-1-10" {
   description = "Kubeconfig to connect to the cluster."
   value       = "${local.kubeconfig-aws-1-10}"
+}
+
+output "role_arn_eks_basic_workers" {
+  description = "ARN of the eks-basic-workers role."
+  value       = "${local.worker_iam_role_arn}"
 }
