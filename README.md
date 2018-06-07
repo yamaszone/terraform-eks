@@ -1,5 +1,7 @@
 # Terraform EKS Cluster
-Work-in-progress PoC for EKS. NOTE: deployment of an EKS cluster will incur cost for AWS resources.
+PoC for EKS cluster deployment
+
+__NOTE__: deploying an EKS cluster will incur cost for AWS resources.
 
 ## Prerequisites
 - Download Heptio Authenticator
@@ -14,6 +16,7 @@ Work-in-progress PoC for EKS. NOTE: deployment of an EKS cluster will incur cost
   - `chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl` # macOS/Linux
 
 ## Quickstart
+#### Deploy
 - Checkout this repo
 - `cp terraform.tfvars.template terraform.tfvars` # Update defaults if needed
 - `terraform init`
@@ -29,6 +32,9 @@ Work-in-progress PoC for EKS. NOTE: deployment of an EKS cluster will incur cost
 - `kubectl get svc -o wide` # Locate the service URL for Nginx
 - Copy the Nginx URL from previous step and launch the Nginx welcome page via port 8000
   - URL may look like `http://a2ec4e6b66a2411e883240aa8289a10c-778396272.us-west-2.elb.amazonaws.com:8000/`
+#### Destroy
+- `kubectl apply -f nginx.yaml`
+- `terraform destroy`
 
 ## Credits
 - [Segmentio Stack](https://github.com/segmentio/stack) for VPC related modules
