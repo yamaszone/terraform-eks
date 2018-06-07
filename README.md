@@ -1,5 +1,5 @@
 # Terraform EKS Cluster
-Work-in-progress PoC for EKS.
+Work-in-progress PoC for EKS. NOTE: deployment of an EKS cluster will incur cost for AWS resources.
 
 ## Prerequisites
 - Download Heptio Authenticator
