@@ -1,0 +1,43 @@
+#!/bin/bash
+
+CURR_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+usage(){
+	printf "Usage:\n"
+	printf "\t up\t\t: Deploy an EKS cluster.\n"
+	printf "\t help\t\t: Show this help.\n"
+	exit 0
+}
+
+deploy_cluster(){
+	TFVARS_FILE=terraform.tfvars
+	cp "$CURR_PATH"/templates/terraform.tfvars.template "$CURR_PATH"/../"$TFVARS_FILE"
+
+	terraform init
+	#terraform plan
+	terraform apply
+
+	terraform output kubeconfig-aws-1-10 > ~/.kube/eksconfig
+	terraform output role_arn_eks_basic_workers > aws-auth-cm.yaml
+
+	export KUBECONFIG=~/.kube/eksconfig
+	kubectl apply -f aws-auth-cm.yaml
+	kubectl get nodes
+}
+
+if [[ -z $1 ]];then
+	usage
+	exit 0
+fi
+
+case $1 in
+	up)
+		deploy_cluster
+		;;
+	tests)
+		run_tests
+		;;
+	* | help)
+		usage
+		;;
+esac

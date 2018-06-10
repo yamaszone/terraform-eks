@@ -1,0 +1,40 @@
+#!/bin/bash
+
+CURR_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+usage(){
+	printf "Usage:\n"
+	printf "\t health\t\t: Run non-destructive health checks.\n"
+	printf "\t tests\t\t: Run destructive tests.\n"
+	printf "\t help\t\t: Show this help.\n"
+	exit 0
+}
+
+run_healthcheck(){
+	"$CURR_PATH"/bats/setup
+
+	bats "$CURR_PATH"/bats/healthcheck_*
+}
+
+run_tests(){
+	"$CURR_PATH"/bats/setup
+
+	bats bats/test_*
+}
+
+if [[ -z $1 ]];then
+	usage
+	exit 0
+fi
+
+case $1 in
+	health)
+		run_healthcheck
+		;;
+	tests)
+		run_tests
+		;;
+	* | help)
+		usage
+		;;
+esac

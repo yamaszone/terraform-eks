@@ -1,3 +1,5 @@
+*.swp
+
 #  Local .terraform directories
 **/.terraform/*
 
@@ -9,3 +11,7 @@
 *.tfvars
 
 aws-auth-cm.yaml
+
+# BATS assertions library
+tests/bats/helpers/assertions
+

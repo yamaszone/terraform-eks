@@ -78,7 +78,8 @@ provider "aws" {
 }
 
 module "vpc" {
-  source             = "./vpc"
+  source             = "./src/modules/vpc"
+
   name               = "${var.name}"
   cidr               = "${var.cidr}"
   internal_subnets   = "${var.internal_subnets}"
@@ -88,7 +89,8 @@ module "vpc" {
 }
 
 module "security_groups" {
-  source      = "./security-groups"
+  source      = "./src/modules/security-groups"
+
   cluster_name= "${var.cluster_name}"
   vpc_id      = "${module.vpc.id}"
   environment = "${var.environment}"
@@ -96,7 +98,8 @@ module "security_groups" {
 }
 
 module "bastion" {
-  source          = "./bastion"
+  source          = "./src/modules/bastion"
+
   region          = "${var.region}"
   instance_type   = "${var.bastion_instance_type}"
   volume_size     = "${var.bastion_volume_size}"
@@ -108,7 +111,7 @@ module "bastion" {
 }
 
 module "iam" {
-  source = "./iam"
+  source = "./src/modules/iam"
 
   policy_arn_eks_cni     = "${var.policy_arn_eks_cni}"
   policy_arn_eks_service = "${var.policy_arn_eks_service}"
@@ -118,7 +121,7 @@ module "iam" {
 }
 
 module "eks" {
-  source                 = "./eks"
+  source                 = "./src/modules/eks"
 
   cluster_name           = "${var.cluster_name}"
   role_arn               = "${module.iam.role_arn_eks_basic_masters}"
@@ -127,7 +130,7 @@ module "eks" {
 }
 
 module "worker" {
-  source = "./worker"
+  source = "./src/modules/worker"
 
   # Use module output to wait for masters to create.
   cluster_name                  = "${module.eks.cluster_id}"

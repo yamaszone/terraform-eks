@@ -1,0 +1,28 @@
+#!/bin/bash
+
+CURR_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+usage(){
+	printf "Usage:\n"
+	printf "\t cluster\t: Cluster deployment commands.\n"
+	printf "\t run\t\t: Run healthcheck/tests.\n"
+	printf "\t help\t\t: Show this help.\n"
+	exit 0
+}
+
+if [[ -z $1 ]];then
+	usage
+	exit 0
+fi
+
+case $1 in
+	cluster)
+		"$CURR_PATH"/src/cluster-bootstrapper "${@:2}"
+		;;
+	run)
+		"$CURR_PATH"/tests/run "${@:2}"
+		;;
+	* | usage)
+		usage
+		;;
+esac
