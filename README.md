@@ -18,15 +18,7 @@ __NOTE__: deploying an EKS cluster will incur cost for AWS resources.
 ## Quickstart
 #### Deploy
 - Checkout this repo
-- `cp terraform.tfvars.template terraform.tfvars` # Update defaults if needed
-- `terraform init`
-- `terraform plan`
-- `terraform apply`
-- `terraform output kubeconfig-aws-1-10 > ~/.kube/eksconfig`
-- `terraform output role_arn_eks_basic_workers > aws-auth-cm.yaml`
-- `export KUBECONFIG=~/.kube/eksconfig`
-- `kubectl apply -f aws-auth-cm.yaml`
-- `kubectl get nodes` # Wait for Node STATUS to be ready
+- `./eks cluster up`
 - `kubectl apply -f nginx.yaml` # Deploy an example Nginx pod
 - `kubectl get pods` # Check if the Nginx pod is running
 - `kubectl get svc -o wide` # Locate the service URL for Nginx
