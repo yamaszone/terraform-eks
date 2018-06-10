@@ -25,7 +25,7 @@ __NOTE__: deploying an EKS cluster will incur cost for AWS resources.
 - Copy the Nginx URL from previous step and launch the Nginx welcome page via port 8000
   - URL may look like `http://a2ec4e6b66a2411e883240aa8289a10c-778396272.us-west-2.elb.amazonaws.com:8000/`
 #### Destroy
-- `kubectl apply -f nginx.yaml`
+- `kubectl delete -f nginx.yaml` # Delete Nginx pod if deployed based on the sample
 - `terraform destroy`
 
 ## Credits
