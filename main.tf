@@ -3,7 +3,7 @@ variable "name" {
 }
 
 variable "cluster_name" {
-  description = "Name of this stack"
+  description = "Name of this EKS cluster"
 }
 
 variable "environment" {
@@ -209,10 +209,10 @@ clusters:
 - cluster:
     server: ${module.eks.endpoint}
     certificate-authority-data: ${module.eks.kubeconfig-certificate-authority-data}
-  name: kubernetes
+  name: "${module.eks.cluster_id}"
 contexts:
 - context:
-    cluster: kubernetes
+    cluster: "${module.eks.cluster_id}"
     user: aws
   name: aws
 current-context: aws
