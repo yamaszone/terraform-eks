@@ -18,15 +18,16 @@ __NOTE__: deploying an EKS cluster will incur cost for AWS resources.
 ## Quickstart
 #### Deploy
 - Checkout this repo
-- `./eks cluster up`
+- `./eks cluster up` # Takes ~15min
 - `kubectl apply -f nginx.yaml` # Deploy an example Nginx pod
+- `export KUBECONFIG=~/.kube/eksconfig`
 - `kubectl get pods` # Check if the Nginx pod is running
 - `kubectl get svc -o wide` # Locate the service URL for Nginx
 - Copy the Nginx URL from previous step and launch the Nginx welcome page via port 8000
   - URL may look like `http://a2ec4e6b66a2411e883240aa8289a10c-778396272.us-west-2.elb.amazonaws.com:8000/`
 #### Destroy
 - `kubectl delete -f nginx.yaml` # Delete Nginx pod if deployed based on the sample
-- `terraform destroy`
+- `terraform destroy` # Takes ~15min
 
 ## Credits
 - [Segmentio Stack](https://github.com/segmentio/stack) for VPC related modules
