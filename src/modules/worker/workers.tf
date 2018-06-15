@@ -38,7 +38,7 @@ resource "aws_launch_configuration" "eks_workers" {
   # key_name = ""
 
   iam_instance_profile        = "${var.instance_profile_name_workers}"
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   user_data                   = "${data.template_file.user_data.rendered}"
 }
 

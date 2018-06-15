@@ -1,7 +1,3 @@
-variable "name" {
-  description = "Name of this stack"
-}
-
 variable "cluster_name" {
   description = "Name of this EKS cluster"
 }
@@ -20,7 +16,6 @@ variable "region" {
 
 variable "cidr" {
   description = "VPC CIDR block"
-  default     = "10.30.0.0/16"
 }
 
 variable "internal_subnets" {
@@ -40,7 +35,6 @@ variable "availability_zones" {
 
 variable "bastion_instance_type" {
   description = "Instance type for the bastion"
-  default = "t2.micro"
 }
 
 variable "bastion_volume_size" {
@@ -80,7 +74,7 @@ provider "aws" {
 module "vpc" {
   source             = "./src/modules/vpc"
 
-  name               = "${var.name}"
+  name               = "${var.cluster_name}"
   cidr               = "${var.cidr}"
   internal_subnets   = "${var.internal_subnets}"
   external_subnets   = "${var.external_subnets}"
@@ -135,7 +129,7 @@ module "worker" {
   # Use module output to wait for masters to create.
   cluster_name                  = "${module.eks.cluster_id}"
   instance_profile_name_workers = "${module.iam.instance_profile_name_workers}"
-  worker_subnets                = "${module.vpc.external_subnets}"
+  worker_subnets                = "${module.vpc.internal_subnets}"
   sg_id_workers                 = "${module.security_groups.sg_id_workers}"
 }
 
