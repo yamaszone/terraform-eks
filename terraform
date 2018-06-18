@@ -1,0 +1,65 @@
+#!/bin/bash
+
+IMAGE=hashicorp/terraform
+IMAGE_TAG=latest
+TF_CONF=~/.terraform_conf
+touch "$TF_CONF"
+cat "$TF_CONF" | grep TERRAFORM_IMAGE > /dev/null 2>&1
+if [[ "$?" == 1 ]];then
+	/bin/bash -c "echo TERRAFORM_IMAGE=${IMAGE}:${IMAGE_TAG} >> ${TF_CONF}"
+fi
+
+get_help(){
+	printf "Usage:\n"
+	printf "\t config\t: Provide Terraform container version (e.g. terraform config 0.9.9) to override default 'latest'.\n"
+	printf "\t --help\t: Show help from Terraform container.\n"
+	printf "\t help\t: Show this help.\n"
+	printf "\t shell\t: Open a shell in the Terraform container.\n"
+	printf "\t * \t: Run Terraform container if no input passed to 'terraform'.\n"
+	exit 0
+}
+
+# param $1 - Image tag
+configure_image_version(){
+    TERRAFORM_IMAGE_GIVEN_TAG=$1
+    if [[ -z "$TERRAFORM_IMAGE_GIVEN_TAG" ]];then
+        printf "ERROR: Provide a target Terraform version (e.g. 0.9.9, latest, etc.) to override the default 'latest' version.\n"
+        exit 1
+    else
+        CUR_TAG=$(cat "$TF_CONF" | grep TERRAFORM_IMAGE | cut -d ":" -f2)
+        sed -i -e "s/${CUR_TAG}/${TERRAFORM_IMAGE_GIVEN_TAG}/g" "$TF_CONF"
+    fi
+    TERRAFORM_IMAGE=$(terraform version)
+    printf "Currently configured image tag is: ${TERRAFORM_IMAGE}.\n"
+}
+
+USER_INPUT_PARAM_1=$1
+case "$USER_INPUT_PARAM_1" in
+    config)
+		USER_INPUT_PARAM_2=$2
+		configure_image_version "$USER_INPUT_PARAM_2"
+		;;
+    help)
+		get_help
+		;;
+    shell)
+		TERRAFORM_IMAGE=$(cat "$TF_CONF" | grep TERRAFORM_IMAGE | cut -d "=" -f2)
+		docker run -it --rm \
+			-v "$PWD":"$PWD" \
+			-v ~/.ssh:/root/.ssh \
+			-v ~/.aws:/root/.aws \
+			--workdir="$PWD" \
+			--entrypoint=sh \
+			"$TERRAFORM_IMAGE"
+		;;
+    *)
+		TERRAFORM_IMAGE=$(cat "$TF_CONF" | grep TERRAFORM_IMAGE | cut -d "=" -f2)
+		docker run -it --rm \
+			-v "$PWD":"$PWD" \
+			-v ~/.ssh:/root/.ssh \
+			-v ~/.aws:/root/.aws \
+			--workdir="$PWD" \
+			"$TERRAFORM_IMAGE" \
+			"${@:1}"
+		;;
+esac
