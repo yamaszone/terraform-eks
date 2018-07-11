@@ -11,7 +11,7 @@ __NOTE__: deploying an EKS cluster will incur cost for AWS resources.
   - `chmod +x heptio-authenticator-aws && sudo mv heptio-authenticator-aws /opt/bin/` # CoreOS
   - `chmod +x heptio-authenticator-aws && sudo mv heptio-authenticator-aws /usr/local/bin/` # macOS/Linux
 - Install `kubectl`
-  - `curl -o https://storage.googleapis.com/kubernetes-release/release/v1.10.3/bin/linux/amd64/kubectl`
+  - `curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.10.3/bin/linux/amd64/kubectl`
   - `chmod +x kubectl && sudo mv kubectl /opt/bin/kubectl` # CoreOS
   - `chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl` # macOS/Linux
 
