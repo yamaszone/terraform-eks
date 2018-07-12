@@ -14,6 +14,11 @@ __NOTE__: deploying an EKS cluster will incur cost for AWS resources.
   - `curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.10.3/bin/linux/amd64/kubectl`
   - `chmod +x kubectl && sudo mv kubectl /opt/bin/kubectl` # CoreOS
   - `chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl` # macOS/Linux
+- Install Terraform `v0.11.7` (SKIP: If already exists in your host)
+  - Setup Terraform using official Terraform Docker image
+    - `chmod +x ./terraform && sudo mv ./terraform /usr/local/bin` # macOS/Ubuntu/Fedora
+    - `chmod +x ./terraform && sudo mv ./terraform /opt/bin` # CoreOS/RancherOS
+  - `terraform config 0.11.7`
 
 ## Quickstart
 #### Deploy
